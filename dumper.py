@@ -26,7 +26,7 @@ class Base(object):
     def _connect_mysql(self):
         try:
             db = pymysql.connect(host=DBHOST, user=DBUSER, password=DBPASS, client_flag=CLIENT.MULTI_STATEMENTS)
-            print(f"CONNECTION SUCCESS\n\tHOST:{DBHOST}\n\tUSER:{DBUSER}")
+            print(f"### CONNECTION SUCCESS ###\n\tHOST:{DBHOST}\n\tUSER:{DBUSER}\n\tDB:{DBNAME}")
             return db
         except pymysql.Error as e:
             self.logger.error(e)

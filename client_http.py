@@ -226,15 +226,19 @@ class TickerPrice(BinanceRequests):
 
     def query(self):
         startTime = time.time()
-
         querystring = self.shape_query(self.query_dict)
-        query_timestamp = time.time()
-        response = self.requests_get(self.api, querystring)
-        data = self.format_response(response, query_timestamp)
-
-        self.logger.info(f"Get response success, cost time:{time.time() - startTime}")
-
-        return data
+        tries = 0
+        while True:
+            try:
+                query_timestamp = time.time()
+                response = self.requests_get(self.api, querystring)
+                data = self.format_response(response, query_timestamp)
+                self.logger.info(f"Get response success, cost time:{time.time() - startTime}")
+                return data
+            except Exception as e:
+                tries += 1
+                self.logger.error(e)
+                self.logger.debug(f"retries:{tries}")
 
     def format_response(self, response, timestamp):
         data = []
@@ -258,5 +262,5 @@ class TickerPrice(BinanceRequests):
 
 if __name__ == '__main__':
     ticker = TickerPrice()
-    data = ticker.query()
-    print(data)
+    data_test = ticker.query()
+    print(data_test)

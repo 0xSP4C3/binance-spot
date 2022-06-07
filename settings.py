@@ -27,7 +27,7 @@ ensure_traceback = False
 # wss_url = "wss://stream.binance.com:9443/ws"
 wss_url = "wss://stream.binance.com:9443/stream"
 
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "ALL"
 
 # MySQL
 DBHOST = "localhost"
