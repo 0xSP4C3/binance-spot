@@ -35,7 +35,8 @@ def per_30seconds(timestamp):
 
 
 def per_minute(timestamp):
-    pass
+    if timestamp % 60 == 0:
+        return True
 
 
 def per_5minutes(timestamp):
@@ -238,7 +239,7 @@ class TickerPrice(BinanceRequests):
             except Exception as e:
                 tries += 1
                 self.logger.error(e)
-                self.logger.debug(f"retries:{tries}")
+                self.logger.info(f"retries:{tries}")
 
     def format_response(self, response, timestamp):
         data = []
@@ -263,4 +264,4 @@ class TickerPrice(BinanceRequests):
 if __name__ == '__main__':
     ticker = TickerPrice()
     data_test = ticker.query()
-    print(data_test)
+    ticker.dump2mysql(data_test)

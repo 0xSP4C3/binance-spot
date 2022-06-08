@@ -66,10 +66,11 @@ class Initor(Base):
         """
         创建数据库，命名为binance，若已存在则跳过
         """
-        self.cur = self.db.cursor()
+        cur = self.db.cursor()
         sql = f"CREATE DATABASE IF NOT EXISTS {DBNAME};USE {DBNAME};" \
               f"USE {DBNAME};"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
+        cur.close()
 
     def _create_table(self):
         """
@@ -77,15 +78,16 @@ class Initor(Base):
         """
 
         # 删除旧表
+        cur = self.db.cursor()
         sql = f"DROP TABLE IF EXISTS {table_info};" \
               f"DROP TABLE IF EXISTS {table_coin};"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
 
         # 创建币种表
         sql = f"CREATE TABLE {table_coin} (" \
               f"`SYMBOL` VARCHAR (20) PRIMARY KEY NOT NULL)" \
               f"ENGINE=InnoDB DEFAULT CHARSET=utf8;"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
 
         # 创建详情表
         """
@@ -104,7 +106,9 @@ class Initor(Base):
               f"INDEX(SYMBOL)," \
               f"CONSTRAINT FK_SYMBOL_COIN FOREIGN KEY (SYMBOL) REFERENCES {table_coin}(SYMBOL))" \
               f"ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;"
-        self.execute_sql(sql, self.cur)
+
+        self.execute_sql(sql, cur)
+        cur.close()
 
     @staticmethod
     def _get_coins():
@@ -123,9 +127,11 @@ class Initor(Base):
         初始化币种信息
         """
         sql = ""
+        cur = self.db.cursor()
         for symbol in self._get_coins():
             sql += f"INSERT INTO {table_coin} (SYMBOL) VALUES (\"{symbol}\");"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
+        cur.close()
 
     def database_init(self):
         """
@@ -148,19 +154,22 @@ class TickerPrice(Base):
 
     def __init__(self):
         super(TickerPrice, self).__init__()
-        self.cur = self.db.cursor()
         self._select_database()
 
     # 选择数据库
     def _select_database(self):
+        cur = self.db.cursor()
         sql = f"USE {DBNAME}"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
+        cur.close()
 
     # 表格数据插入
     def _insert(self, symbol, price, datetime, timestamp):
+        cur = self.db.cursor()
         sql = f"INSERT INTO {table_info} (SYMBOL, PRICE, DATETIME, TIMESTAMP) " \
               f"VALUES (\"{symbol}\", \"{price}\", \"{datetime}\", \"{timestamp}\");"
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
+        cur.close()
 
     # 数据插入接口，Client的on_message统一调用该方法
     def dump_ws(self, data):
@@ -214,6 +223,7 @@ class TickerPrice(Base):
         或者直接构造sql文件也可以
         目前来看还是请求占用时间较多
         """
+        cur = self.db.cursor()
         sql = f"INSERT INTO {table_info} (SYMBOL, PRICE, DATETIME, TIMESTAMP) VALUES "
         body = []
         for item in data:
@@ -224,7 +234,8 @@ class TickerPrice(Base):
             body.append(f"(\"{symbol}\", \"{price}\", \"{datetime}\", \"{timestamp}\")")
         sql = sql + ",".join(body) + ";"
 
-        self.execute_sql(sql, self.cur)
+        self.execute_sql(sql, cur)
+        cur.close()
 
 
 if __name__ == "__main__":
