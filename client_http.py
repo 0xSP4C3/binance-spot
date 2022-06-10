@@ -6,7 +6,8 @@
 
 # !/usr/bin/python3
 # -*- coding: utf-8 -*-
-
+import json
+import os
 import time
 from threading import Thread, Event
 from typing import Callable
@@ -178,30 +179,50 @@ class Klines(BinanceRequests):
         return query_dict
 
     def query(self):
+        startTime = time.time()
         querystring = self.shape_query(self.query_dict)
-        response = self.requests_get(self.api, querystring)
-        data = self.format_response(response)
-        print(data)
-        return data
+        tries = 0
+        while True:
+            try:
+                response = self.requests_get(self.api, querystring)
+                data = self.format_response(response)
+                self.logger.info(f"Get response success, cost time:{time.time() - startTime}")
+                return data
+            except Exception as e:
+                tries += 1
+                self.logger.error(e)
+                self.logger.info(f"retries:{tries}")
 
     def format_response(self, response):
         data = []
         for item in response:
             data.append({
-                "start time": item[0],
-                "start time style": self.timestamp2strftime(item[0]),
-                "start price": item[1],
-                "highest price": item[2],
-                "lowest price": item[3],
-                "closing price": item[4],
-                "trade amount": item[5],
-                "end time": item[6],
-                "end time style": self.timestamp2strftime(item[6]),
+                "open time": item[0],
+                "open time style": self.timestamp2strftime(item[0]),
+                "open price": float(item[1]),
+                "high": float(item[2]),
+                "low": float(item[3]),
+                "close": float(item[4]),
+                "volume": float(item[5]),
+                "close time": item[6],
+                "close time style": self.timestamp2strftime(item[6]),
+                "quote volume": float(item[7]),
+                "trade numbers": item[8],
+                "volume buying": float(item[9]),
+                "quote volume buying": float(item[10])
             })
         return data
 
     def dump2mysql(self):
         pass
+
+    def dump2json(self, data, filepath):
+        with open(f"{filepath}", "w") as f:
+            try:
+                json.dump(data, f, indent=4)
+                self.logger.info(f"Dump to json success, path:{filepath}")
+            except Exception as e:
+                self.logger.error(f"Dump error:{e}")
 
 
 class TickerPrice(BinanceRequests):
@@ -261,7 +282,37 @@ class TickerPrice(BinanceRequests):
         self.logger.info(f"Dump data success, cost time:{time.time() - startTime}")
 
 
+def getCoinsList():
+    data = requests.get("https://api.binance.com/api/v3/ticker/price", proxies=requests_proxies).json()
+    coin_list = []
+    for item in data:
+        coin_list.append(item["symbol"])
+    return coin_list
+
+
+def getCoinsGenerator():
+    data = requests.get("https://api.binance.com/api/v3/ticker/price", proxies=requests_proxies).json()
+    for item in data:
+        yield item["symbol"]
+
+
+# get Klines data for several symbols and dump into json, used for test
+def getKlinesData():
+    for symbol in getCoinsGenerator():
+        klines = Klines(symbol, "1d", limit=1000)
+
+        # mkdir for jsons
+        root = os.path.dirname(__file__) + "\\1000days"
+        if not os.path.exists(root):
+            os.mkdir(root)
+        filename = symbol + ".json"
+        filepath = root + "\\" + filename
+
+        data_test = klines.query()
+        klines.dump2json(data_test, filepath)
+
 if __name__ == '__main__':
-    ticker = TickerPrice()
-    data_test = ticker.query()
-    ticker.dump2mysql(data_test)
+    getKlinesData()
+    # ticker = TickerPrice()
+    # data_test = ticker.query()
+    # ticker.dump2mysql(data_test)

@@ -2,4 +2,5 @@
 .idea/
 *.log
 *.pyc
-test.py
+test*.py
+1000days/
