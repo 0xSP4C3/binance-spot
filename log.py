@@ -4,10 +4,11 @@
 # Email: 532990165@qq.com
 # DateTime: 2022/6/5 16:15
 
-import logging
-import time
 import os
+import time
+from logging.handlers import TimedRotatingFileHandler
 
+import logging
 from settings import LOG_LEVEL
 
 if not os.path.exists("logging"):
@@ -25,8 +26,10 @@ def get_logger():
     chlr.setFormatter(formatter)
     chlr.setLevel("INFO")  # 也可以不设置，不设置就默认用logger的level
 
-    file_name = time.strftime("%Y%m%d%H%M%S")
-    fhlr = logging.FileHandler(f"./logging/{file_name}.log")  # 输出到文件的handler
+    filename = f'{time.strftime("%Y%m%d%H%M%S")}.log'
+    fhlr = TimedRotatingFileHandler(f"./logging/{filename}", when="H", interval=6,
+                                    backupCount=10)
+
     fhlr.setFormatter(formatter)
 
     logger.addHandler(chlr)

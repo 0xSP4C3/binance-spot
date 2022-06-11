@@ -12,6 +12,8 @@
 
 官方文档：https://github.com/binance/binance-spot-api-docs/
 
+官方文档2：https://binance-docs.github.io/apidocs/spot/en/#change-log
+
 官方python库：https://github.com/binance/binance-connector-python
 
 - binance的所有api支持两种查询方式：http和websoket。官方库中，若使用Spot则是采用htt协议，查询方式类似于使用requests发送请求；若使用BinanceWebsoketClient则是使用websocket，主要实现订阅功能。我这里统一没有使用官方库。
@@ -48,6 +50,15 @@ eg：略
 - wss://stream.binance.com:9443/ws
 - wss://stream.binance.com:9443/stream
 
+### 查询限制：
+
+- WebSocket connections have a limit of 5 incoming messages per second. A message is considered:
+  - A PING frame
+  - A PONG frame
+  - A JSON controlled message (e.g. subscribe, unsubscribe)
+- A connection that goes beyond the limit will be disconnected; IPs that are repeatedly disconnected may be banned.
+- A single connection can listen to a maximum of 1024 streams.
+
 ### 查询方式：
 
 - 建立连接后发送如下格式参数
@@ -65,14 +76,14 @@ ws.send(json.dumps(data))
 """
 method：SUBSCRIBE表示订阅，UNSUBSCRIBE表示取消订阅，还有多种参数参见官方文档
 id：用于区分返回的消息属于哪个订阅，自己设置
-params：如果使用stream接口，可以支持联合查询
+params：可以支持联合查询
 	eg："params": ["BTCUSDT@ticker", "BNBBTC@ticker"]
 """
 ```
 
 - 若订阅成功，会首先返回一个{result:"Null"}
 
-- 目前使用不带参的ticker接口，会自动返回流动信息（只要价格发生变化就会推送，推送内容为详细信息），数据量大概在500-800条/秒左右，能完全导入到数据库中。由于该订阅全名叫24hr_ticker，**不确定是否超过24h后需要重新订阅**。
+- 目前使用不带参的ticker接口，会自动返回流动信息（只要价格发生变化就会推送，推送内容为详细信息），数据量大概在500-800条/秒左右。
 
 - 每三分钟会发送一个Ping
 
@@ -111,11 +122,72 @@ params：如果使用stream接口，可以支持联合查询
 // 若使用ws接口，返回参数会略有不同
 ```
 
-# 关于DATABASE
+### K线接口：
 
-**以下是我自己用来存到本地Mysql时用的表结构**
+**Kline/Candlestick chart intervals:**
 
-## INFO
+m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
+
+- 1m
+- 3m
+- 5m
+- 15m
+- 30m
+- 1h
+- 2h
+- 4h
+- 6h
+- 8h
+- 12h
+- 1d
+- 3d
+- 1w
+- 1M
+
+**Stream Name:** <symbol>@kline_<interval>
+
+**Update Speed:** 2000ms
+
+**Payload:**
+
+```
+{
+  "e": "kline",     // Event type
+  "E": 123456789,   // Event time
+  "s": "BNBBTC",    // Symbol
+  "k": {
+    "t": 123400000, // Kline start time
+    "T": 123460000, // Kline close time
+    "s": "BNBBTC",  // Symbol
+    "i": "1m",      // Interval
+    "f": 100,       // First trade ID
+    "L": 200,       // Last trade ID
+    "o": "0.0010",  // Open price
+    "c": "0.0020",  // Close price
+    "h": "0.0025",  // High price
+    "l": "0.0015",  // Low price
+    "v": "1000",    // Base asset volume
+    "n": 100,       // Number of trades
+    "x": false,     // Is this kline closed?
+    "q": "1.0000",  // Quote asset volume
+    "V": "500",     // Taker buy base asset volume
+    "Q": "0.500",   // Taker buy quote asset volume
+    "B": "123456"   // Ignore
+  }
+}
+```
+
+**attention：**
+
+- 查询时请使用小写symbol
+- 满足查询interval时，结束参数data\["k"]["x"]为True，统一都是取整分钟作为K线开始时间
+- 币种更新会有延迟，和订阅币种数量关系不大，部分冷门币种接口数据更新很慢（比如ethtusd，一分钟只推送两次，且基本上要过8秒才会返回上一分钟的数据，这是binance服务器的原因）
+
+## 其他
+
+关于DATABASE
+
+INFO
 
 | COLUMN_NAME | COLUMN_TYPE  | DATA_TYPE | CHARACTER_MAXIMUM_LENGTH | IS_NULLABLE |
 | ----------- | ------------ | --------- | ------------------------ | ----------- |
@@ -143,7 +215,7 @@ CREATE TABLE `info` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8；
 ```
 
-## COIN
+COIN
 
 | COLUMN_NAME | COLUMN_TYPE | DATA_TYPE | CHARACTER_MAXIMUM_LENGTH | IS_NULLABLE |
 | ----------- | ----------- | --------- | ------------------------ | ----------- |

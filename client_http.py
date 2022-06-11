@@ -296,7 +296,7 @@ def getCoinsGenerator():
         yield item["symbol"]
 
 
-# get Klines data for several symbols and dump into json, used for test
+# get Klines data for several symbols and dump into json, limit 1000days
 def getKlinesData():
     for symbol in getCoinsGenerator():
         klines = Klines(symbol, "1d", limit=1000)
@@ -308,11 +308,47 @@ def getKlinesData():
         filename = symbol + ".json"
         filepath = root + "\\" + filename
 
-        data_test = klines.query()
-        klines.dump2json(data_test, filepath)
+        data = klines.query()
+        klines.dump2json(data, filepath)
+
+
+# get Klines data for specific symbols and dump into json, all time
+def getKlinesDataAllTime(symbol):
+    # mkdir for json
+    root = os.path.dirname(__file__) + "\\AllTime"
+    if not os.path.exists(root):
+        os.mkdir(root)
+    filename = symbol + ".json"
+    filepath = root + "\\" + filename
+
+    endTime = int(time.time() * 1e3)
+    data_all = []
+    while True:
+        klines = Klines(symbol, "1d", end_time=endTime, limit=1000)
+        data = klines.query()
+        if endTime == data[0]["open time"]:
+            break
+        endTime = data[0]["open time"]
+        data_all.extend(data)
+
+    data_all.sort(key=lambda x: x["open time"])
+    klines.dump2json(data_all, filepath)
+
+
+# get Klines data for all symbols from json file and dump into jsons, all time
+def getKlinesDataAllTime_all(coins_json):
+    with open(coins_json, "r") as f:
+        coins = json.load(f)
+
+    for symbol in coins:
+        getKlinesDataAllTime(symbol)
+
 
 if __name__ == '__main__':
-    getKlinesData()
     # ticker = TickerPrice()
     # data_test = ticker.query()
     # ticker.dump2mysql(data_test)
+
+    # getKlinesDataAllTime("BTCUSDT")
+
+    getKlinesDataAllTime_all("coins_filter_USDT.json")

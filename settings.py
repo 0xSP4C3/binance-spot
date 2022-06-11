@@ -24,8 +24,8 @@ ensure_traceback = False
 
 # 有多个wss可以连接，/stream支持combine输入和简化数据返回
 # wss_url = "wss://dstream.binance.com/stream/"
-# wss_url = "wss://stream.binance.com:9443/ws"
-wss_url = "wss://stream.binance.com:9443/stream"
+wss_url = "wss://stream.binance.com:9443/ws"
+# wss_url = "wss://stream.binance.com:9443/stream"
 
 LOG_LEVEL = "DEBUG"
 
