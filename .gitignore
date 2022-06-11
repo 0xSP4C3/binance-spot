@@ -1,8 +1,9 @@
 
 .idea/
-*.log
-*.pyc
+logging/
+__pycache__/
 
 test*.py
 1000days/
 AllTime/
+*.rar

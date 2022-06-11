@@ -3,6 +3,7 @@
 # Auth0r: ara_umi
 # Email: 532990165@qq.com
 # DateTime: 2022/6/5 14:05
+import asyncio
 import json
 import time
 import traceback
@@ -40,21 +41,30 @@ class BinanceWebsocketClient(object):
 
     def on_open(self, ws):
         self.logger.info("Opened connection")
+        # asyncio.run(self.subscribe(ws))
         self.subscribe(ws)
 
     def subscribe(self, ws):
-        params = self._shape_params()
-        data = {
-            "method": "SUBSCRIBE",
-            "id": 1,
-            "params": params
-        }
-        print(data)
-        ws.send(json.dumps(data))
+        # params too long will cause failure of subscribe, cut the list and subscribe in several times
 
-    def _shape_params(self):
+        # 实测419个USDT币种里面只有352个返回，说明有些接口是废的，并没有信息
+        n = 20
+        for i in range(0, len(self.coins), n):
+            params = self._shape_params(self.coins[i:i + n])
+            data = {
+                "method": "SUBSCRIBE",
+                "id": 1,
+                "params": params
+            }
+            self.logger.info(f"Subscribe, params: {i} --> {i + n} from coin list")
+            ws.send(json.dumps(data))
+            # ws accept up to 5 messages per second including ping/pong, more than it will cause disconnection
+            time.sleep(0.5)
+
+    @staticmethod
+    def _shape_params(coin_list):
         params = []
-        for symbol in self.coins[:20]:
+        for symbol in coin_list:
             params.append(symbol.lower() + "@kline_1m")
         return params
 
@@ -101,9 +111,8 @@ class BinanceWebsocketClient(object):
                 "buying quote volume": k["Q"],
                 # "ignore": k["B"],
             }
-            print(time.localtime().tm_min, ":", time.localtime().tm_sec)
+            # print(time.localtime().tm_min, ":", time.localtime().tm_sec)
             print(data)
-            print("-------------------------------")
 
         # 订阅成功后第一次返回为{'result': None, 'id': id}
         # try:
