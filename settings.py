@@ -19,8 +19,6 @@ requests_proxies = {
 # binance api domain
 domain = "https://api.binance.com/api/v3/"
 
-# traceback on or not, used in websocket
-ensure_traceback = False
 
 # 有多个wss可以连接，/stream支持combine输入和简化数据返回
 # wss_url = "wss://dstream.binance.com/stream/"

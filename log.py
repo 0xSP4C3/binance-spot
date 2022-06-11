@@ -9,36 +9,54 @@ import time
 from logging.handlers import TimedRotatingFileHandler
 
 import logging
+
 from settings import LOG_LEVEL
 
-if not os.path.exists("logging"):
-    os.mkdir("logging")
 
+class Logger(object):
+    def __init__(self):
+        self.logger = self._logger_init()
 
-def get_logger():
-    logger = logging.getLogger()
-    logger.setLevel(LOG_LEVEL)
-    BASIC_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
-    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-    formatter = logging.Formatter(BASIC_FORMAT, DATE_FORMAT)
+    @staticmethod
+    def _mkdir():
+        if not os.path.exists("logging"):
+            os.mkdir("logging")
 
-    chlr = logging.StreamHandler()  # 输出到控制台的handler
-    chlr.setFormatter(formatter)
-    chlr.setLevel("INFO")  # 也可以不设置，不设置就默认用logger的level
+    def _logger_init(self):
+        """
+        logger options
+        """
+        self._mkdir()
 
-    filename = f'{time.strftime("%Y%m%d%H%M%S")}.log'
-    fhlr = TimedRotatingFileHandler(f"./logging/{filename}", when="H", interval=6,
-                                    backupCount=10)
+        logger = logging.getLogger()
+        logger.setLevel(LOG_LEVEL)
+        BASIC_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
+        DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+        formatter = logging.Formatter(BASIC_FORMAT, DATE_FORMAT)
 
-    fhlr.setFormatter(formatter)
+        chlr = logging.StreamHandler()  # 输出到控制台的handler
+        chlr.setFormatter(formatter)
+        chlr.setLevel("INFO")  # 也可以不设置，不设置就默认用logger的level
 
-    logger.addHandler(chlr)
-    logger.addHandler(fhlr)
+        filename = f'{time.strftime("%Y%m%d%H%M%S")}.log'
+        fhlr = TimedRotatingFileHandler(f"./logging/{filename}", when="H", interval=6,
+                                        backupCount=10)
 
-    return logger
+        fhlr.setFormatter(formatter)
 
+        logger.addHandler(chlr)
+        logger.addHandler(fhlr)
 
-logger = get_logger()
+        return logger
+
+    def get_logger(self):
+        """
+        get logger
+        """
+        self.logger.info("Logger get")
+        return self.logger
+
 
 if __name__ == "__main__":
-    logger.info("this is info")
+    my_logger = Logger().get_logger()
+    my_logger.info("this is info")

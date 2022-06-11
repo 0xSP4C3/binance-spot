@@ -9,7 +9,7 @@ import pymysql
 import requests
 from pymysql.constants import CLIENT
 
-from log import logger
+from log import Logger
 from settings import DBNAME, DBPASS, DBUSER, DBHOST
 
 # 默认表名，为了方便修改就创建个变量
@@ -18,7 +18,7 @@ table_info = "INFO"
 
 
 class Base(object):
-    def __init__(self):
+    def __init__(self, logger):
         self.db = self._connect_mysql()
         self.logger = logger
 
