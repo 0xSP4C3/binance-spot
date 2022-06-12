@@ -16,11 +16,11 @@ from urllib.parse import urljoin, urlencode
 import requests
 
 import dumper
-from log import logger
+from log import Logger
 from settings import requests_proxies, domain
 
 proxy = requests_proxies
-
+logger = Logger().get_logger()
 
 def per_second(timestamp):
     return True
@@ -313,9 +313,9 @@ def getKlinesData():
 
 
 # get Klines data for specific symbols and dump into json, all time
-def getKlinesDataAllTime(symbol):
+def getKlinesDataAllTime(symbol, interval):
     # mkdir for json
-    root = os.path.dirname(__file__) + "\\AllTime"
+    root = os.path.dirname(__file__) + f"\\AllTime_{interval}"
     if not os.path.exists(root):
         os.mkdir(root)
     filename = symbol + ".json"
@@ -324,7 +324,7 @@ def getKlinesDataAllTime(symbol):
     endTime = int(time.time() * 1e3)
     data_all = []
     while True:
-        klines = Klines(symbol, "1d", end_time=endTime, limit=1000)
+        klines = Klines(symbol, interval, end_time=endTime, limit=1000)
         data = klines.query()
         if endTime == data[0]["open time"]:
             break
@@ -336,12 +336,12 @@ def getKlinesDataAllTime(symbol):
 
 
 # get Klines data for all symbols from json file and dump into jsons, all time
-def getKlinesDataAllTime_all(coins_json):
+def getKlinesDataAllTime_all(coins_json, interval:str):
     with open(coins_json, "r") as f:
         coins = json.load(f)
 
     for symbol in coins:
-        getKlinesDataAllTime(symbol)
+        getKlinesDataAllTime(symbol, interval)
 
 
 if __name__ == '__main__':
@@ -351,4 +351,4 @@ if __name__ == '__main__':
 
     # getKlinesDataAllTime("BTCUSDT")
 
-    getKlinesDataAllTime_all("coins_filter_USDT.json")
+    getKlinesDataAllTime_all("coins_filter_USDT.json", "4h")
