@@ -3,9 +3,11 @@
 涉及库比较少，我也没搞新的环境，就没弄requirements.txt
 
 - websocket-client==1.3.2  # 安装请认准websocket-client，调用时直接是websocket，类似库很多很容易弄错
+- https://websocket-client.readthedocs.io/en/latest/threading.html
+
+
 
 - requests==2.27.1
-
 - PyMySQL==1.0.2
 
 # 关于BinanceAPI
@@ -181,7 +183,8 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
 
 - 查询时请使用小写symbol
 - 满足查询interval时，结束参数data\["k"]["x"]为True，统一都是取整分钟作为K线开始时间
-- 币种更新会有延迟，和订阅币种数量关系不大，部分冷门币种接口数据更新很慢（比如ethtusd，一分钟只推送两次，且基本上要过8秒才会返回上一分钟的数据，这是binance服务器的原因）
+- 币种更新会有延迟，和订阅币种数量关系不大，部分冷门币种接口数据更新很慢（比如ethtusd，一分钟只推送两次，且基本上要过8秒才会返回上一分钟的数据，这是binance服务器的原因）部分订阅后没有任何返回
+- 单个ws最多订阅1024个streams，多了就会1008
 
 ## 其他
 

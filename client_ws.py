@@ -131,7 +131,7 @@ class KlineWS(BinanceWS):
             super(KlineWS, self).on_open(ws)
             self.subscribe()
 
-        threading.Thread(target=run).start()
+        threading.Thread(target=run, daemon=True).start()
 
     def subscribe(self):
         for i in range(0, len(self.coin_list), self.subscribe_number):
@@ -211,7 +211,10 @@ class KlineWS(BinanceWS):
     def on_error(self, ws, error):
         if type(error) == KeyboardInterrupt:
             self.ws.close()
-            self.logger.info("KEYBOARD INTERRUPT, WEBSOCKET CLOSED")
+            self.logger.error("KEYBOARD INTERRUPT, WEBSOCKET CLOSED")
+        elif type(error) == ConnectionRefusedError:
+            self.ws.close()
+            self.logger.error("CONNECTION FAILED, PLEASE CHECK YOUR INTERNET OR PROXY")
         else:
             info = traceback.format_exc()
             self.logger.error(error)
@@ -225,9 +228,58 @@ class KlineWS(BinanceWS):
         return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ms * 1e-3))
 
 
+class KlineWSFilter(KlineWS):
+    """
+    a subclass of KlineWS to find out which api of symbol can subscribe and response data message
+    and which actually doesn't response any thing
+    """
+    def __init__(self, url, logger, ensure_traceback=False):
+        super(KlineWSFilter, self).__init__(url, logger, ensure_traceback)
+        self.can_subscribe = set()
+
+    def on_open(self, ws):
+        super(KlineWSFilter, self).on_open(ws)
+
+        def counting():
+            while True:
+                time.sleep(60)
+                print(f"{time.strftime('%X', time.localtime())}：共接收到{len(self.can_subscribe)}种币种返回信息")
+                print(self.can_subscribe)
+        threading.Thread(target=counting, daemon=True).start()
+
+    def on_message(self, ws, data):
+        data = json.loads(data)
+
+        # when subscribe success, receive a message like "{"result":null,"id":1}"
+        try:
+            res = data["result"]
+            if not res:
+                self.logger.info("Subscribe success")
+                return
+        except KeyError:
+            pass
+
+        k = data["k"]
+        is_close = k["x"]
+        if is_close:
+            self.can_subscribe.add(data["s"])
+
+    def dump_can_subscribe(self):
+        self.logger.info(f"During running {len(self.can_subscribe)} types of symbol has responded data message")
+        with open("coins_can_subscribe.json", "w") as f:
+            data = [i for i in self.can_subscribe]
+            json.dump(data, f, indent=4)
+
+    def on_close(self, ws, status_code, message):
+        self.dump_can_subscribe()
+        self.logger.info(f"WS closed, status code:{status_code}, message:{message}")
+        self.logger.info(f"### CLOSED ###")
+
+
 def main():
     # get coin list
-    coin_list = readCoinsJson("coins_filter_USDT.json")
+    coin_fp = "coins_filter_USDT.json"
+    coin_list = readCoinsJson(coin_fp)
     # get logger
     logger = Logger().get_logger()
 
@@ -241,5 +293,47 @@ def main():
     # klines.run()
 
 
+def compare():
+    """
+    main function to find out those symbols which don't have klines api
+    """
+    coin_fp = "coins_filter_USDT.json"
+    coin_list = readCoinsJson(coin_fp)
+    logger = Logger().get_logger()
+
+    klines = KlineWSFilter(wss_url, logger, ensure_traceback=False)
+    klines.set_subscribe_option(coin_list, "1m", number=30)
+
+    klines.run_with_proxy(websocket_proxy)
+
+    logger.info("开始比对数据：")
+    coin_list_can_subscribe = readCoinsJson("coins_can_subscribe.json")
+    coin_list_cannot_subscribe = []
+    for coin in coin_list:
+        if coin not in coin_list_can_subscribe:
+            coin_list_cannot_subscribe.append(coin)
+
+    with open("coins_cannot_subscribe.json", "w") as f:
+        json.dump(coin_list_cannot_subscribe, f, indent=4, sort_keys=True)
+
+    logger.info(f"共计订阅{len(coin_list)}种币种")
+    logger.info(f"运行期间共计{len(coin_list_can_subscribe)}种币种提供了K线数据")
+    logger.info(f"共计{len(coin_list_cannot_subscribe)}种币种无响应")
+    logger.info(f"详情：{coin_list_cannot_subscribe}")
+
+
 if __name__ == "__main__":
-    main()
+    # class Test(object):
+    #     def __init__(self):
+    #         self.set = set()
+    #         for i in range(1000):
+    #             self.set.add(str(i))
+    #
+    #     def show_list(self):
+    #         print(self.set)
+    #         print(type(self.set))
+    #         print(list(self.set))
+    # test = Test()
+    # test.show_list()
+    compare()
+    # main()
