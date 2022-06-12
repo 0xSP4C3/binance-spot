@@ -323,17 +323,5 @@ def compare():
 
 
 if __name__ == "__main__":
-    # class Test(object):
-    #     def __init__(self):
-    #         self.set = set()
-    #         for i in range(1000):
-    #             self.set.add(str(i))
-    #
-    #     def show_list(self):
-    #         print(self.set)
-    #         print(type(self.set))
-    #         print(list(self.set))
-    # test = Test()
-    # test.show_list()
     compare()
     # main()
