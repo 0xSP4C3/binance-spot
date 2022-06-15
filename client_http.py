@@ -18,6 +18,7 @@ import requests
 import dumper
 from log import Logger
 from settings import requests_proxies, domain
+from abc import ABCMeta, abstractmethod
 
 proxy = requests_proxies
 logger = Logger().get_logger()
@@ -90,7 +91,7 @@ class Timer(object):
         time_function.join()
 
 
-class BinanceRequests(object):
+class BinanceRequests(metaclass=ABCMeta):
     domain = domain
     proxies = requests_proxies
 
@@ -148,6 +149,7 @@ class BinanceRequests(object):
     def shape_query_dict(self, *args, **kwargs):
         pass
 
+    @abstractmethod
     def query(self, *args, **kwargs):
         pass
 
