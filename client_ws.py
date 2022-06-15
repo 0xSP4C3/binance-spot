@@ -12,7 +12,7 @@ import traceback
 import websocket
 
 from getCoins import readCoinsJson
-from log import Logger
+from log import MyLogger
 from settings import wss_url, websocket_proxy
 
 
@@ -21,9 +21,9 @@ class BinanceWS(object):
     base class
     """
 
-    def __init__(self, url, logger, ensure_traceback=True):
+    def __init__(self, url, ensure_traceback=True):
         websocket.enableTrace(ensure_traceback)
-        self.logger = logger
+        self.logger = MyLogger().logger
         self.ws = self._get_ws(url)
 
     def _get_ws(self, url):
@@ -93,8 +93,8 @@ class BinanceWS(object):
 
 
 class KlineWS(BinanceWS):
-    def __init__(self, url, logger, ensure_traceback=True):
-        super(KlineWS, self).__init__(url, logger, ensure_traceback)
+    def __init__(self, url, ensure_traceback=True):
+        super(KlineWS, self).__init__(url, ensure_traceback)
 
     @classmethod
     def set_subscribe_option(cls, coin_list: list, interval: str, number=20):
@@ -233,8 +233,8 @@ class KlineWSFilter(KlineWS):
     a subclass of KlineWS to find out which api of symbol can subscribe and response data message
     and which actually doesn't response any thing
     """
-    def __init__(self, url, logger, ensure_traceback=False):
-        super(KlineWSFilter, self).__init__(url, logger, ensure_traceback)
+    def __init__(self, url, ensure_traceback=False):
+        super(KlineWSFilter, self).__init__(url, ensure_traceback)
         self.can_subscribe = set()
 
     def on_open(self, ws):
@@ -280,10 +280,7 @@ def main():
     # get coin list
     coin_fp = "coins_filter_USDT.json"
     coin_list = readCoinsJson(coin_fp)
-    # get logger
-    logger = Logger().get_logger()
-
-    klines = KlineWS(wss_url, logger, ensure_traceback=False)
+    klines = KlineWS(wss_url, ensure_traceback=False)
     # set params options
     klines.set_subscribe_option(coin_list, "1m", number=30)
 
@@ -299,14 +296,12 @@ def compare():
     """
     coin_fp = "coins_filter_USDT.json"
     coin_list = readCoinsJson(coin_fp)
-    logger = Logger().get_logger()
-
-    klines = KlineWSFilter(wss_url, logger, ensure_traceback=False)
+    klines = KlineWSFilter(wss_url, ensure_traceback=False)
     klines.set_subscribe_option(coin_list, "1m", number=30)
 
     klines.run_with_proxy(websocket_proxy)
 
-    logger.info("开始比对数据：")
+    klines.logger.info("开始比对数据：")
     coin_list_can_subscribe = readCoinsJson("coins_can_subscribe.json")
     coin_list_cannot_subscribe = []
     for coin in coin_list:
@@ -316,12 +311,12 @@ def compare():
     with open("coins_cannot_subscribe.json", "w") as f:
         json.dump(coin_list_cannot_subscribe, f, indent=4, sort_keys=True)
 
-    logger.info(f"共计订阅{len(coin_list)}种币种")
-    logger.info(f"运行期间共计{len(coin_list_can_subscribe)}种币种提供了K线数据")
-    logger.info(f"共计{len(coin_list_cannot_subscribe)}种币种无响应")
-    logger.info(f"详情：{coin_list_cannot_subscribe}")
+    klines.logger.info(f"共计订阅{len(coin_list)}种币种")
+    klines.logger.info(f"运行期间共计{len(coin_list_can_subscribe)}种币种提供了K线数据")
+    klines.logger.info(f"共计{len(coin_list_cannot_subscribe)}种币种无响应")
+    klines.logger.info(f"详情：{coin_list_cannot_subscribe}")
 
 
 if __name__ == "__main__":
-    compare()
-    # main()
+    # compare()
+    main()

@@ -9,7 +9,7 @@ import pymysql
 import requests
 from pymysql.constants import CLIENT
 
-from log import Logger
+from log import MyLogger
 from settings import DBNAME, DBPASS, DBUSER, DBHOST
 
 # 默认表名，为了方便修改就创建个变量

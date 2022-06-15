@@ -9,19 +9,16 @@
 import json
 import os
 import time
+from abc import ABCMeta, abstractmethod
 from threading import Thread, Event
 from typing import Callable
 from urllib.parse import urljoin, urlencode
 
 import requests
 
-import dumper
-from log import Logger
+from log import MyLogger
 from settings import requests_proxies, domain
-from abc import ABCMeta, abstractmethod
 
-proxy = requests_proxies
-logger = Logger().get_logger()
 
 def per_second(timestamp):
     return True
@@ -93,10 +90,9 @@ class Timer(object):
 
 class BinanceRequests(metaclass=ABCMeta):
     domain = domain
-    proxies = requests_proxies
 
     def __init__(self):
-        self.logger = logger
+        self.logger = MyLogger().logger
         # self.test_ping()
 
     def test_ping(self):
@@ -118,8 +114,8 @@ class BinanceRequests(metaclass=ABCMeta):
         url = urljoin(domain, api) + querystring
         self.logger.info(f"Request, method:GET url:{url}")
 
-        if proxy:
-            return requests.get(url, proxies=proxy).json()
+        if requests_proxies:
+            return requests.get(url, proxies=requests_proxies).json()
         else:
             return requests.get(url).json()
 
@@ -232,7 +228,7 @@ class TickerPrice(BinanceRequests):
         super(TickerPrice, self).__init__()
         self.api = "ticker/price"
         self.query_dict = self.shape_query_dict(symbol)
-        self.dumper = dumper.TickerPrice()
+        # self.dumper = dumper.TickerPrice()
 
     @staticmethod
     def shape_query_dict(symbol):
@@ -338,7 +334,7 @@ def getKlinesDataAllTime(symbol, interval):
 
 
 # get Klines data for all symbols from json file and dump into jsons, all time
-def getKlinesDataAllTime_all(coins_json, interval:str):
+def getKlinesDataAllTime_all(coins_json, interval: str):
     with open(coins_json, "r") as f:
         coins = json.load(f)
 
@@ -347,10 +343,10 @@ def getKlinesDataAllTime_all(coins_json, interval:str):
 
 
 if __name__ == '__main__':
-    # ticker = TickerPrice()
-    # data_test = ticker.query()
+    ticker = Klines("BTCUSDT", "4h", limit=10)
+    data_test = ticker.query()
     # ticker.dump2mysql(data_test)
 
     # getKlinesDataAllTime("BTCUSDT")
 
-    getKlinesDataAllTime_all("coins_filter_USDT.json", "4h")
+    # getKlinesDataAllTime_all("coins_filter_USDT.json", "4h")

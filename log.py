@@ -9,16 +9,35 @@ import time
 from logging.handlers import TimedRotatingFileHandler
 
 import logging
-
 from settings import LOG_LEVEL
 
 
-class Logger(object):
+class Singleton(object):
+    __instance = None
+
+    # make sure there's only one logger
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(Singleton, cls).__new__(cls)
+        return cls._instance
+
+
+class MyLogger(Singleton):
+    __init_flag = False
+
     def __init__(self):
-        self.logger = self._logger_init()
+        if not self.__init_flag:
+            self.__init_flag = True
+            self._mkdir()
+            self._logger = self._logger_init()
+
+    @property
+    def logger(self):
+        return self._logger
 
     @staticmethod
     def _mkdir():
+        # mkdir for log files
         if not os.path.exists("logging"):
             os.mkdir("logging")
 
@@ -26,7 +45,6 @@ class Logger(object):
         """
         logger options
         """
-        self._mkdir()
 
         logger = logging.getLogger()
         logger.setLevel(LOG_LEVEL)
@@ -34,7 +52,7 @@ class Logger(object):
         DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
         formatter = logging.Formatter(BASIC_FORMAT, DATE_FORMAT)
 
-        chlr = logging.StreamHandler()  # 输出到控制台的handler
+        chlr = logging.StreamHandler()
         chlr.setFormatter(formatter)
         chlr.setLevel("INFO")  # 也可以不设置，不设置就默认用logger的level
 
@@ -49,14 +67,7 @@ class Logger(object):
 
         return logger
 
-    def get_logger(self):
-        """
-        get logger
-        """
-        self.logger.info("Logger get")
-        return self.logger
-
 
 if __name__ == "__main__":
-    my_logger = Logger().get_logger()
+    my_logger = MyLogger().get_logger()
     my_logger.info("this is info")

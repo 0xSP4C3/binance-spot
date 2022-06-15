@@ -12,6 +12,7 @@ websocket_proxy = {
 }
 
 # proxy for request
+# requests_proxies = None
 requests_proxies = {
     "https": "127.0.0.1:7890"
 }
