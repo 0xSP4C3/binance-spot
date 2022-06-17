@@ -197,7 +197,7 @@ class Klines(BinanceRequests):
             data.append({
                 "open time": item[0],
                 "open time style": self.timestamp2strftime(item[0]),
-                "open price": float(item[1]),
+                "open": float(item[1]),
                 "high": float(item[2]),
                 "low": float(item[3]),
                 "close": float(item[4]),
@@ -343,10 +343,10 @@ def getKlinesDataAllTime_all(coins_json, interval: str):
 
 
 if __name__ == '__main__':
-    ticker = Klines("BTCUSDT", "4h", limit=10)
-    data_test = ticker.query()
+    # ticker = Klines("BTCUSDT", "4h", limit=10)
+    # data_test = ticker.query()
     # ticker.dump2mysql(data_test)
 
-    # getKlinesDataAllTime("BTCUSDT")
+    getKlinesDataAllTime("BTCUSDT", "4h")
 
     # getKlinesDataAllTime_all("coins_filter_USDT.json", "4h")
